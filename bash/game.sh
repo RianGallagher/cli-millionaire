@@ -1,4 +1,4 @@
-#!/usr/bin/zsh
+#!/usr/bin/bash
 
 player_name=
 
@@ -6,101 +6,80 @@ RED='\033[0;41m'
 BLUE='\033[44m'
 NC='\033[0m'
 
-# RGB='\033[38;2;40;177;249m'
+RGB_MAX=(256 256 256)
 
-# START='\033[38;2;3;3;3m'
-# END='\033[38;2;3;3;3m'
+declare -a step
 
-# declare -a step
+# Figure out the distance between the start and end colour for each part of the RGB colour.
+stepize() {
+    start=$1
+    end=$2
+    steps=$3
 
-# # steps is the number of colours passed.
+    length=${#start[@]}
 
-# # only gets run once per gradient.
-# stepize() {
-#     start=$1
-#     end=$2
-#     steps=$3
+    for ((i = 0; i < ${length}; i++)); do
+        step[$i]=$(expr $(expr $(expr "${end[i]}" - "${start[i]}") / "$steps"))
+    done
+}
 
-#     length=${#start[@]}
+# Create the colours for each step in the gradient.
+interpolate() {
+    start=$1
+    end=$2
+    steps=$3
 
-#     for ((i = 0; i < ${length}; i++)); do
-#         step[$i]=$(expr $(expr "${end[i]}" - "${start[i]}") / "$steps")
-#     done
+    for ((i = 0; i < $steps; i++)); do
+        declare -a color
 
-#     for i in "${step[@]}"; do
-#         echo "$i"
-#     done
-# }
+        length=${#start[@]}
 
-# gradient=("\033[38;2;${start[0]};${start[1]};${start[2]}m")
-# start=(247 11 11)
-# end=(11 11 247)
-# # steps=10
-# # stepize $start $end $steps
+        for ((j = 0; j < ${length}; j++)); do
+            color[$j]=$(expr "${step[j]}" \* "$i" + "${start[j]}")
+            if [[ "${color[$j]}" -lt 0 ]]; then
+                color[$j]=$(expr "${color[$j]}" + "${RGB_MAX[$j]}")
+            else
+                color[$j]=$(expr "${color[$j]}" % "${RGB_MAX[$j]}")
+            fi
+        done
+        gradient[$i]="\033[38;2;${color[0]};${color[1]};${color[2]}m"
+    done
+}
 
-# interpolate() {
-#     start=$1
-#     end=$2
-#     steps=$3
-#     RGB_MAX=(256 256 256)
+create_gradient() {
+    start=$1
+    end=$2
+    steps=$3
 
-#     for ((i = 0; i < $steps; i++)); do
-#         declare -a color
-
-#         length=${#start[@]}
-
-#         for ((j = 0; j < ${length}; j++)); do
-#             # step[$i]=$(expr $(expr "${end[i]}" - "${start[i]}") / "$steps")
-#             color[$j]=$(expr "${step[j]}" \* "$i" + "${start[j]}")
-#             if [[ "${color[$j]}" -lt 0 ]]; then
-#                 color[$j]=$(expr "${color[$j]}" + "${RGB_MAX[$j]}")
-#             else
-#                 color[$j]=$(expr "${color[$j]}" % "${RGB_MAX[$j]}")
-#             fi
-#         done
-#         gradient[$i]="\033[38;2;${color[0]};${color[1]};${color[2]}m"
-#     done
-
-#     for i in "${gradient[@]}"; do
-#         echo "$i"
-#     done
-# }
-
-# create_gradient() {
-#     steps=$1
-
-#     stepize $start $end $steps
-#     interpolate $start $end $steps
-# }
-
-# # create the gradient
-# foo="Who Wants To Be A Bash Millionaire?"
-# create_gradient ${#foo}
-
-# to_print=""
-
-# for ((i = 0; i < ${#foo}; i++)); do
-#     to_print="${to_print}${gradient[i]}${foo:$i:1}"
-# done
-
-# printf "${to_print}"
+    stepize $start $end $steps
+    interpolate $start $end $steps
+}
 
 animate() {
     text=$1
 
-    # create_gradient ${#foo}
+    for i in {0..7}; do
+        #  If it's the first index, create the colours.
+        if [ $i == 0 ]; then
+            start=(63 94 251)
+            end=(252 70 107)
+        # Otherwise, increment the start and end colour.
+        else
+            start=($(expr $(expr 63 + $(expr "${step[0]}" \* $i)) % 256) $(expr $(expr 94 + $(expr "${step[1]}" \* $i)) % 256) $(expr $(expr 251 + $(expr "${step[2]}" \* $i)) % 256))
+            end=($(expr $(expr 252 + $(expr "${step[0]}" \* $i)) % 256) $(expr $(expr 70 + $(expr "${step[1]}" \* $i)) % 256) $(expr $(expr 107 + $(expr "${step[2]}" \* $i)) % 256))
+        fi
 
-    for i in {1..7}; do
+        gradient=("\033[38;2;${start[0]};${start[1]};${start[2]}m")
 
-        # for ((i = 0; i < ${#text}; i++)); do
-        #     printf "${gradient[i]}${text:$i:1}"
-        # done
+        create_gradient $start $end ${#text}
+        gradient_string=""
+        for ((i = 0; i < ${#text}; i++)); do
+            gradient_string="${gradient_string}${gradient[i]}${text:$i:1}"
+        done
 
         # Moved the cursor 1 up. Move the cursor to column 0 (?) erase the entire line. Print the text with the colour
         # altered by $i
-        # printf "\033[1F\033[G\033[2K\033[0;3%sm$text\n" $i
-        printf "\033[1F\033[G\033[2K\033[38;2;40;1%s7;249m$text\n" $i
-        sleep 0.3
+        printf "\033[1F\033[G\033[2K$gradient_string\n"
     done
 }
 
