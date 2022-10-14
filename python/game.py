@@ -20,9 +20,6 @@ welcome()
 
 
 def ask_name():
-    # player_name: str = input("What is your name? (Player) ") or "Player"
-    # print(player_name)
-
     answers = inquirer.prompt(
         [
             inquirer.Text(
