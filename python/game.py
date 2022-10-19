@@ -2,6 +2,7 @@ import inquirer
 from yaspin import yaspin
 import os
 import time
+from pyfiglet import Figlet
 
 player_name = ""
 
@@ -68,7 +69,9 @@ question_1()
 
 def winner():
     os.system("clear")
-    print(f"Congrats {player_name}! \n $ 1 , 0 0 0 , 0 0 0")
+    message = f"Congrats {player_name}! \n $ 1 , 0 0 0 , 0 0 0"
+    fig = Figlet()
+    print(fig.renderText(message))
 
 
 winner()
