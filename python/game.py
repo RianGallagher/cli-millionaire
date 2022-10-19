@@ -1,5 +1,7 @@
 import inquirer
+from yaspin import yaspin
 import os
+import time
 
 player_name = ""
 
@@ -35,11 +37,16 @@ ask_name()
 
 
 def handle_answer(isCorrect: bool):
-    print("Checking answer...")
+    spinner = yaspin(text="Checking answer...", color="yellow")
+    spinner.start()
+    time.sleep(2)
+    spinner.stop()
+
     if isCorrect:
-        print(f"Nice work { player_name }.")
+        spinner.ok(f"Nice work { player_name }.")
     else:
-        print(f"💀💀💀 Game over, you lose {player_name}!")
+        spinner.fail(f"💀💀💀 Game over, you lose {player_name}!")
+        exit(1)
 
 
 def question_1():
